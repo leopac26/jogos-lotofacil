@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sorteio Lotofácil - Fechamento</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+    h1 { text-align: center; color: #4CAF50; }
+    .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px #ccc; }
+    input, select, button { width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #ccc; }
+    button { background: #4CAF50; color: white; font-weight: bold; cursor: pointer; }
+    #cartoes { margin-top: 20px; white-space: pre-wrap; background: #e8f5e9; padding: 15px; border-radius: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Lotofácil Fechamento</h1>
+  <div class="container">
+    <label>Digite seus números (separados por espaço):</label>
+    <input type="text" id="numeros" placeholder="Ex: 1 2 3 4 5 6 7 8 9 10 ...">
+
+    <label>Escolha quantos números jogar (16 a 24):</label>
+    <select id="quantidade"></select>
+
+    <button onclick="gerarCartoes()">Gerar Cartões</button>
+    <button onclick="sugerirAleatorios()">Sugerir Aleatórios</button>
+    <button onclick="baixarTxt()">Baixar Cartões</button>
+
+    <div id="cartoes"></div>
+  </div>
+
+  <script>
+    // Preenche o select de quantidades
+    const selectQuantidade = document.getElementById('quantidade');
+    for (let i = 16; i <= 24; i++) {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.innerText = i + ' Números';
+      selectQuantidade.appendChild(opt);
+    }
+
+    function gerarCartoes() {
+      const numerosInput = document.getElementById('numeros').value.trim().split(/\s+/).map(Number);
+      const quantidadeEscolhida = parseInt(document.getElementById('quantidade').value);
+      const cartoesDiv = document.getElementById('cartoes');
+      cartoesDiv.innerText = '';
+
+      if (numerosInput.length < quantidadeEscolhida) {
+        alert('Você digitou menos números do que o escolhido.');
+        return;
+      }
+
+      const combinacoes = combinar(numerosInput, 15);
+      let texto = '';
+      combinacoes.forEach((cartao, idx) => {
+        texto += 'Cartão ' + (idx + 1) + ': ' + cartao.join(' ') + '\n';
+      });
+      cartoesDiv.innerText = texto;
+    }
+
+    function sugerirAleatorios() {
+      const numeros = [];
+      while (numeros.length < 24) {
+        const n = Math.floor(Math.random() * 25) + 1;
+        if (!numeros.includes(n)) {
+          numeros.push(n);
+        }
+      }
+      document.getElementById('numeros').value = numeros.join(' ');
+    }
+
+    function baixarTxt() {
+      const texto = document.getElementById('cartoes').innerText;
+      const blob = new Blob([texto], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'cartoes.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function combinar(arr, k) {
+      const results = [];
+      function helper(start, path) {
+        if (path.length === k) {
+          results.push(path);
+          return;
+        }
+        for (let i = start; i < arr.length; i++) {
+          helper(i + 1, path.concat(arr[i]));
+        }
+      }
+      helper(0, []);
+      return results.slice(0, 30); // Limita a 30 cartões por praticidade
+    }
+  </script>
+
+  <!-- Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(reg => console.log('Service Worker registrado'))
+        .catch(err => console.log('Erro Service Worker', err));
+    }
+  </script>
+
+<script>
+  let deferredPrompt;
+  
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+  
+    // Criar botão para instalar
+    const installButton = document.createElement('button');
+    installButton.textContent = 'Instalar App';
+    installButton.style.position = 'fixed';
+    installButton.style.bottom = '20px';
+    installButton.style.right = '20px';
+    installButton.style.padding = '10px 20px';
+    installButton.style.backgroundColor = '#4CAF50';
+    installButton.style.color = 'white';
+    installButton.style.border = 'none';
+    installButton.style.borderRadius = '5px';
+    installButton.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
+    installButton.style.zIndex = '1000';
+    installButton.style.cursor = 'pointer';
+  
+    document.body.appendChild(installButton);
+  
+    installButton.addEventListener('click', async () => {
+      installButton.style.display = 'none';
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          console.log('Usuário aceitou instalar');
+        } else {
+          console.log('Usuário recusou instalar');
+        }
+        deferredPrompt = null;
+      }
+    });
+  });
+  </script>
+  
+</body>
+</html>
